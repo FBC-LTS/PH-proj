@@ -1,5 +1,4 @@
-from random import randint  as rv
-from secrets import choice
+from random import choices, randint as rv
 
 def between(val, mini, maxi):
     # Value is between mini and maxi?
@@ -28,6 +27,9 @@ class CharAttributes:
             'cha': 0
         }
         self.__auto_upmods()
+    
+    def get_mod(self):
+        return self.__mod
 
     def get_all_atts(self):
         atts = {
@@ -73,12 +75,22 @@ class CharAttributes:
     
     def choice_randon_setter(self):
         # All attributes will receive the values [8, 9, 12, 13, 15, 16] randomly
-        self.__str = choice(self.__std_atr)
-        self.__dex = choice(self.__std_atr)
-        self.__con = choice(self.__std_atr)
-        self.__int = choice(self.__std_atr)
-        self.__wis = choice(self.__std_atr)
-        self.__cha = choice(self.__std_atr)
+        ls = self.__std_atr
+        chls = []
+        for attribute in range(6):
+            if len(ls) > 1:
+                ch = choices(ls)[0]
+                chls.append(ch)
+                ls.remove(ch)
+            else:
+                chls.append(ls[0])
+
+        self.__str = chls[0]
+        self.__dex = chls[1]
+        self.__con = chls[2]
+        self.__int = chls[3]
+        self.__wis = chls[4]
+        self.__cha = chls[5]
         self.__auto_upmods()
     
     def full_randon_setter(self, min=0, max=18): 
@@ -99,14 +111,17 @@ class Character:
         self.__xp = 0
         self.__armor = 0
         self.__name = 'name'
-        self.__race = 'race'
+        self.__race = 'HUMAN'
         self.__atts = atts
         self.__moves = {}
-        self.__ch_class = 'class'
-        # Possible classes according to race:
-        self.__posclass = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Paladin', 'Ranger', 'Thief', 'Wizard'] 
-        # Possible reces according to class:
-        self.__posrace = ['HUMAN', 'ELF', 'DWARF', 'HALFLING'] 
+        self.__ch_class = 'Fighter'
+        # Possible classes AND race match:
+        self.__possMatch = {
+            'HUMAN': ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Paladin', 'Ranger', 'Thief', 'Wizard'], 
+            'ELF': ['Barbarian', 'Bard', 'Druid', 'Fighter', 'Ranger', 'Wizard'], 
+            'DWARF': ['Barbarian', 'Cleric', 'Fighter'], 
+            'HALFLING': ['Barbarian', 'Druid', 'Fighter', 'Thief']}
+        self.__valid = True
 
     def get_lvl(self):
         return self.__lvl
@@ -147,11 +162,49 @@ class Character:
     
     def newmove_setter(self, move_name, move_desc):
         self.__moves[move_name] = move_desc
+
     
-    def class_setter(self, cclass): #$$
-        if cclass.upper() in self.__posclass:
-            self.__ch_class = cclass
+    def class_setter(self, cclass):
+
+        match = self.__possMatch[self.__race]
+        if cclass.capitalize() in match:
+            self.__ch_class = cclass.capitalize()
+            self.__valid = True
+        else:
+            self.__valid = False
+            self.__ch_class = cclass.capitalize()
+            print(f'Invalid class value {cclass} \n Possible class to race {self.__race} : {match}')
     
-    def race_setter(self, race): #$$
-        if race.upper() in self.__posrace:
-            self.__race = race
+    def race_setter(self, race): 
+        if race.upper() in self.__possMatch.keys():
+            match = self.__possMatch[race.upper()]
+            if self.__ch_class in match:
+                self.__race = race.upper()
+                self.__valid = True
+            else:
+                self.__valid = False
+                self.__race = race.upper()
+                print(f'Invalid Class:{self.__ch_class.capitalize()} to race {self.__race.capitalize()}')
+        else:
+            print(f'Invalid race value {race.capitalize()}')
+    
+    def damage_update(): #$$$
+
+        pass
+
+    def show_self(self):
+        sep = ('-=') * 15
+        unsep = ('-' + ('_' * 21) + '-') 
+        smpsep = ('-' * 23)
+        print(
+            f' {sep} \n--> Name: {self.__name} \n--> Race: {self.__race.capitalize()} \n--> class: {self.__ch_class}\n--> valida: {self.__valid}'
+            f'\n   {unsep}\n   | Level: {self.__lvl}  |   XP: {self.__xp} |\n   {smpsep}\n'
+            f'-   | att | val | mod|'
+        )
+        attrs = self.__atts.get_all_atts()
+        attkeys = list(attrs.keys())
+        mod = self.__atts.get_mod()
+        for i in range(6):
+            key = attkeys[i]
+            print(f'-   | {key} : {attrs[key]:3} | {mod[key]:2} |')
+        print(f'{sep}')
